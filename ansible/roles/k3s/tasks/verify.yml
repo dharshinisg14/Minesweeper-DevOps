@@ -1,0 +1,27 @@
+---
+# Verification of K3s Cluster Health
+
+- name: Retrieve cluster nodes status from control plane
+  ansible.builtin.command: kubectl get nodes -o wide
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: kubectl_nodes
+  become: yes
+  retries: 12
+  delay: 10
+  until: kubectl_nodes.rc == 0 and ('NotReady' not in kubectl_nodes.stdout)
+
+- name: Display K3s Cluster Nodes
+  ansible.builtin.debug:
+    msg: "{{ kubectl_nodes.stdout_lines }}"
+
+- name: Check ingress controller pods status
+  ansible.builtin.command: kubectl get pods -A
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  register: kubectl_pods
+  become: yes
+
+- name: Display Cluster Pods Summary
+  ansible.builtin.debug:
+    msg: "{{ kubectl_pods.stdout_lines }}"

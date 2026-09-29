@@ -1,0 +1,35 @@
+---
+# ========================================================
+# Global Ansible Variables for Minesweeper Cluster
+# ========================================================
+
+# K3s Kubernetes Distribution Version
+k3s_version: "v1.28.8+k3s1"
+
+# K3s Server CLI options:
+# - Write kubeconfig with 644 permissions so ubuntu user can access without sudo
+# - Register master public and private IPs in TLS SAN certificates
+# - Disable built-in Traefik to automate production standard NGINX Ingress Controller
+k3s_server_args: >-
+  --write-kubeconfig-mode 644
+  --tls-san {{ ansible_host }}
+  --tls-san {{ private_ip }}
+  --disable traefik
+  --disable servicelb
+
+# System path to K3s token on control plane
+k3s_node_token_path: "/var/lib/rancher/k3s/server/node-token"
+
+# Destination to store retrieved kubeconfig on CI controller / host
+local_kubeconfig_path: "{{ playbook_dir }}/../../kubeconfig"
+
+# NGINX Ingress Controller Release Manifest URL
+nginx_ingress_manifest_url: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml"
+
+# Docker package dependencies
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin

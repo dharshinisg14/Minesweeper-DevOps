@@ -1,0 +1,75 @@
+---
+# Common tasks executed across all cluster nodes
+
+- name: Wait for system SSH connection to be fully ready
+  ansible.builtin.wait_for_connection:
+    timeout: 300
+    delay: 5
+
+- name: Update apt repository cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+
+- name: Install system dependencies and network utilities
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - git
+      - htop
+      - jq
+      - iptables
+      - socat
+      - conntrack
+      - tar
+    state: present
+  become: yes
+
+- name: Disable swap memory (Kubernetes requirement)
+  ansible.builtin.command: swapoff -a
+  become: yes
+  changed_when: false
+
+- name: Permanently disable swap in /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+.*)$'
+    replace: '# \1'
+  become: yes
+
+- name: Load required Linux kernel modules for Kubernetes networking
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+  become: yes
+  ignore_errors: yes
+
+- name: Ensure kernel modules load automatically on system boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    mode: '0644'
+  become: yes
+
+- name: Set Kubernetes network sysctl parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes
+    state: present
+    reload: yes
+  loop:
+    - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { key: 'net.ipv4.ip_forward', value: '1' }
+  become: yes

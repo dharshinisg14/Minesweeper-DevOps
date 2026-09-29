@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper Clone | Enterprise DevOps Showcase</title>
+  <meta name="description" content="Production-ready Minesweeper web application deployed using GitHub, Jenkins, Docker, Terraform, Ansible, and K3s Kubernetes.">
+  <meta name="keywords" content="minesweeper, devops, kubernetes, docker, terraform, ansible, ci/cd">
+  <meta name="author" content="DevOps Team">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💣</text></svg>">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Header / Navbar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-badge">
+          <span class="icon-pulse"></span>
+          <span>K3s v1.28</span>
+        </div>
+        <h1 class="brand-title">Minesweeper <span class="accent-text">Clone</span></h1>
+        <p class="brand-subtitle">Cloud-Native CI/CD • Jenkins • Docker • Terraform • Ansible • Kubernetes</p>
+      </div>
+
+      <div class="header-controls">
+        <button id="btn-sound-toggle" class="btn-icon" aria-label="Toggle Sound" title="Toggle Sound">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button id="btn-info-modal" class="btn-icon" aria-label="Open System Architecture Info" title="Architecture & Rules">
+          <span>ℹ️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="game-container">
+      <!-- Difficulty & Mode Selector -->
+      <section class="controls-toolbar" aria-label="Game Configuration Toolbar">
+        <div class="difficulty-group" role="group" aria-label="Difficulty Selection">
+          <button id="diff-easy" class="btn-diff active" data-difficulty="easy">
+            <span class="diff-title">Easy</span>
+            <span class="diff-specs">9×9 • 10 💣</span>
+          </button>
+          <button id="diff-medium" class="btn-diff" data-difficulty="medium">
+            <span class="diff-title">Medium</span>
+            <span class="diff-specs">16×16 • 40 💣</span>
+          </button>
+          <button id="diff-hard" class="btn-diff" data-difficulty="hard">
+            <span class="diff-title">Hard</span>
+            <span class="diff-specs">30×16 • 99 💣</span>
+          </button>
+        </div>
+
+        <!-- Mobile Touch Action Mode Switcher -->
+        <div class="mobile-action-bar">
+          <button id="btn-mode-toggle" class="btn-mode-toggle" aria-label="Toggle Dig or Flag mode for touch screens">
+            <span class="mode-label">Mobile Action:</span>
+            <span id="mode-state" class="mode-state dig">⛏️ Dig Mode</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Game Status Dashboard -->
+      <section class="game-dashboard" aria-label="Game Dashboard">
+        <!-- Mines Counter -->
+        <div class="counter-box" title="Remaining Mines">
+          <div class="counter-label">MINES</div>
+          <div id="mines-counter" class="lcd-display">010</div>
+        </div>
+
+        <!-- Smiley Restart Button -->
+        <div class="face-control">
+          <button id="btn-restart" class="btn-face" aria-label="Restart Game" title="Click to Restart">
+            <span id="face-icon" class="face-emoji">🙂</span>
+          </button>
+        </div>
+
+        <!-- Timer Display -->
+        <div class="counter-box" title="Elapsed Time">
+          <div class="counter-label">TIME</div>
+          <div id="timer-counter" class="lcd-display">000</div>
+        </div>
+      </section>
+
+      <!-- Status Notice Banner -->
+      <div id="status-banner" class="status-banner" role="status" aria-live="polite">
+        Ready to play! Click any cell to begin.
+      </div>
+
+      <!-- Minesweeper Grid Board Wrapper -->
+      <div class="board-viewport">
+        <div id="minesweeper-board" class="minesweeper-board" role="grid" aria-label="Minesweeper Game Board">
+          <!-- Dynamically generated cells -->
+        </div>
+      </div>
+
+      <!-- Quick Guidance / Keyboard Shortcuts -->
+      <footer class="game-footer">
+        <div class="hint-pill">
+          <span class="pill-key">Left Click</span>
+          <span class="pill-desc">Reveal Cell</span>
+        </div>
+        <div class="hint-pill">
+          <span class="pill-key">Right Click</span>
+          <span class="pill-desc">Flag Mine</span>
+        </div>
+        <div class="hint-pill mobile-hint">
+          <span class="pill-key">Mobile</span>
+          <span class="pill-desc">Toggle Dig/Flag button</span>
+        </div>
+      </footer>
+    </main>
+
+    <!-- DevSecOps Architecture Modal -->
+    <div id="info-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modal-title">DevOps & System Architecture</h2>
+          <button id="btn-close-modal" class="btn-close-modal" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="arch-flow">
+            <div class="flow-step">
+              <span class="step-num">1</span>
+              <div>
+                <strong>GitHub</strong>
+                <p>Feature branches, PR reviews & Git-flow strategy.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">2</span>
+              <div>
+                <strong>Jenkins CI/CD</strong>
+                <p>Automated linting, Jest unit tests & multi-stage Docker build.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">3</span>
+              <div>
+                <strong>Terraform & AWS</strong>
+                <p>IaC provisioning VPC, Subnets, Security Groups & EC2 instances.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">4</span>
+              <div>
+                <strong>Ansible</strong>
+                <p>Configures control plane, generates tokens, and bootstraps K3s cluster.</p>
+              </div>
+            </div>
+            <div class="flow-step">
+              <span class="step-num">5</span>
+              <div>
+                <strong>K3s Kubernetes</strong>
+                <p>Zero-downtime rolling update, self-healing probes, and Ingress routing.</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer-cta">
+            <p><strong>Version:</strong> v1.0.0-production</p>
+            <p><strong>Environment:</strong> K3s Kubernetes (Namespace: <code>minesweeper</code>)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Victory / Game Over Overlay -->
+    <div id="game-result-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card result-card">
+        <div id="result-icon" class="result-icon">🏆</div>
+        <h2 id="result-title" class="result-title">Victory!</h2>
+        <p id="result-message" class="result-message">You successfully cleared the minefield!</p>
+        <div class="result-stats">
+          <div class="stat-item">
+            <span class="stat-label">Time Taken</span>
+            <span id="stat-time" class="stat-value">0s</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Difficulty</span>
+            <span id="stat-difficulty" class="stat-value">Easy</span>
+          </div>
+        </div>
+        <button id="btn-modal-restart" class="btn-primary">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio synthesizers & Game Logic Modules -->
+  <script src="minesweeper-game.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

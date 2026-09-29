@@ -1,0 +1,92 @@
+---
+# K3s Control Plane / Master Node Installation & Configuration
+
+- name: Check if K3s server binary is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Download official K3s installation script
+  ansible.builtin.get_url:
+    url: https://get.k3s.io
+    dest: /tmp/install_k3s.sh
+    mode: '0755'
+  when: not k3s_binary.stat.exists
+
+- name: Execute K3s Server installation
+  ansible.builtin.shell: >
+    INSTALL_K3S_VERSION="{{ k3s_version }}"
+    INSTALL_K3S_EXEC="{{ k3s_server_args }}"
+    /tmp/install_k3s.sh
+  become: yes
+  when: not k3s_binary.stat.exists
+
+- name: Ensure K3s service is active and running
+  ansible.builtin.systemd:
+    name: k3s
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Wait for K3s node token to be generated
+  ansible.builtin.wait_for:
+    path: "{{ k3s_node_token_path }}"
+    timeout: 60
+  become: yes
+
+- name: Read K3s cluster node-token
+  ansible.builtin.slurp:
+    src: "{{ k3s_node_token_path }}"
+  register: k3s_token_raw
+  become: yes
+
+- name: Store decoded cluster join token across plays
+  ansible.builtin.set_fact:
+    k3s_join_token: "{{ k3s_token_raw['content'] | b64decode | trim }}"
+
+- name: Share token globally with worker nodes
+  ansible.builtin.add_host:
+    name: "K3S_TOKEN_HOLDER"
+    token: "{{ k3s_join_token }}"
+    master_ip: "{{ private_ip | default(ansible_host) }}"
+
+- name: Create .kube directory for ubuntu user
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Copy kubeconfig to user profile
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+  become: yes
+
+- name: Fetch kubeconfig to Ansible controller / Jenkins workspace
+  ansible.builtin.fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ local_kubeconfig_path }}"
+    flat: yes
+  become: yes
+
+- name: Update API server endpoint in local kubeconfig to Master Public IP
+  ansible.builtin.replace:
+    path: "{{ local_kubeconfig_path }}"
+    regexp: 'https://127.0.0.1:6443'
+    replace: "https://{{ ansible_host }}:6443"
+  delegate_to: localhost
+  become: no
+
+- name: Deploy Ingress Controller (NGINX) on K3s cluster
+  ansible.builtin.shell: |
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
+  environment:
+    KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
+  become: yes
+  ignore_errors: yes

@@ -1,0 +1,41 @@
+# ========================================================
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and customize for your environment.
+# DO NOT COMMIT terraform.tfvars containing sensitive secrets!
+# ========================================================
+
+# AWS Target Region
+aws_region = "us-east-1"
+
+# Deployment Environment
+environment = "production"
+
+# Network CIDRs
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+availability_zones  = ["us-east-1a", "us-east-1b"]
+
+# EC2 Instance Sizing
+# t3.medium provides 2 vCPUs and 4GB RAM - ideal for K3s master & workers
+instance_type = "t3.medium"
+
+# Number of K3s Worker Nodes (Configurable!)
+worker_count = 2
+
+# SSH Key Pair
+# Leave empty to let Terraform automatically generate a secure TLS key pair
+# saved to ansible/id_rsa_minesweeper
+key_name       = ""
+ssh_public_key = ""
+
+# Security: Restrict SSH to your public IP / corporate VPN in production
+# Example: "203.0.113.45/32"
+allowed_ssh_cidr = "0.0.0.0/0"
+
+# Optional Jenkins EC2 Controller provisioning
+# Set to true if you want Terraform to launch a dedicated Jenkins EC2 instance
+enable_jenkins_ec2   = false
+jenkins_instance_type = "t3.large"
+
+# Ingress Domain Name
+domain_name = "minesweeper.local"

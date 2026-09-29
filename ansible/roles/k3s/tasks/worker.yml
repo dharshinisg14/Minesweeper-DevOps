@@ -1,0 +1,41 @@
+---
+# K3s Worker Node Installation & Join Playbook
+
+- name: Verify master join token is available
+  ansible.builtin.assert:
+    that:
+      - hostvars['K3S_TOKEN_HOLDER']['token'] is defined
+      - hostvars['K3S_TOKEN_HOLDER']['master_ip'] is defined
+    fail_msg: "Cluster token or master IP was not properly captured from control plane."
+
+- name: Check if K3s agent is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s-agent
+  register: k3s_agent_binary
+
+- name: Download official K3s installation script
+  ansible.builtin.get_url:
+    url: https://get.k3s.io
+    dest: /tmp/install_k3s.sh
+    mode: '0755'
+  when: not k3s_agent_binary.stat.exists
+
+- name: Join K3s cluster as Worker Node
+  ansible.builtin.shell: >
+    K3S_URL="https://{{ hostvars['K3S_TOKEN_HOLDER']['master_ip'] }}:6443"
+    K3S_TOKEN="{{ hostvars['K3S_TOKEN_HOLDER']['token'] }}"
+    INSTALL_K3S_VERSION="{{ k3s_version }}"
+    /tmp/install_k3s.sh
+  become: yes
+  when: not k3s_agent_binary.stat.exists
+
+- name: Ensure K3s Agent service is enabled and started
+  ansible.builtin.systemd:
+    name: k3s-agent
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Wait for agent node to establish connection
+  ansible.builtin.pause:
+    seconds: 10

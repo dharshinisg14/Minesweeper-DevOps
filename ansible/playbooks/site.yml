@@ -1,0 +1,14 @@
+---
+# ========================================================
+# Master Ansible Playbook (site.yml)
+# Complete cluster provisioning and configuration pipeline
+# ========================================================
+
+- name: Import Common System Configurations
+  ansible.builtin.import_playbook: common.yml
+
+- name: Import Docker Engine Setup
+  ansible.builtin.import_playbook: docker.yml
+
+- name: Import K3s Cluster Provisioning & Node Joining
+  ansible.builtin.import_playbook: k3s.yml
